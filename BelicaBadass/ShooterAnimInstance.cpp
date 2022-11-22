@@ -23,9 +23,12 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		// Is the Character moving?
 		bIsMoving = ShooterCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;
 
+		// is the Character aiming?
+		bAiming = ShooterCharacter->GetAiming();
+
+		// Calculate movement offset for straffing and backward animations
 		FRotator AimRotation{ ShooterCharacter->GetBaseAimRotation() }, MovementRotation{ UKismetMathLibrary::MakeRotFromX(ShooterCharacter->GetVelocity()) };
 		MovementOffsetYaw = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
-
 		if (ShooterCharacter->GetVelocity().Size() > 0.f) LastMovementOffsetYaw = MovementOffsetYaw;
 	}
 }
