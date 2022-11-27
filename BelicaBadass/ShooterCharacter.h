@@ -9,6 +9,8 @@
 class USpringArmComponent;
 class UCameraComponent;
 class USoundCue;
+class AItem;
+class AWeapon;
 
 UCLASS()
 class BELICABADASS_API AShooterCharacter : public ACharacter
@@ -23,6 +25,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void SetDefaultCameraView();
+
 	// Called for forwards and backwards input
 	void MoveForward(float Value);
 
@@ -35,7 +39,7 @@ protected:
 	// Called via input to look up and down at a given rate
 	void LookUpAtRate(float Rate);
 
-	// Called when the Fire Weapon button is pressed
+	// Starts a series of events related to firing the weapon
 	void FireWeapon();
 
 	// Returns true when the line trace hits an object
@@ -53,18 +57,43 @@ protected:
 	// Spreads the crosshairs based on movement and activity of the Character
 	void CalculateCrosshairSpread(float DeltaTime);
 
+	// Sets bFireBullet to true and starts the crosshair mover timer
 	void StartCrosshairBulletFire();
 
+	// Set bFireBullet to false and ends the crosshair mover timer
 	UFUNCTION()
 	void FinishCrosshairBulletFire();
 
+	// Called when the Fire Weapon button is pressed and released
 	void FireButtonPressed();
 	void FireButtonReleased();
 
+	// Calls FireWeapon() and starts the timer for automatic gun fire
 	void StartFireButtonTimer();
 
+	// Ends the timer for automatic gun fire unless the fire weapon button is still pressed
 	UFUNCTION()
 	void AutoFireReset();
+
+	// Line trace for Items under the crosshairs
+	bool TraceUnderCrosshairs(FHitResult& OutHitResult, FVector& OutHitLocation);
+
+	// Trace for items if OverlappedItemCount > 0
+	void TraceForItems();
+
+	// Spawns the Weapon the character is holding when the game starts
+	AWeapon* SpawnDefaultWeapon();
+
+	// Takes a Weapon and attaches it to the mesh
+	void EquipWeapon(AWeapon* WeaponToEquip);
+
+	// Detach Weapon and let it fall to the ground
+	void DropWeapon();
+
+	void EquipButtonPressed();
+
+	// Drops EquippedWeapon and equips TraceHitItem
+	void SwapWeapon(AWeapon* WeaponToSwap);
 
 public:	
 	// Called every frame
@@ -75,6 +104,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	float GetCrosshairSpreadMultiplier() const;
+
+	// Adds or subtracts to or from OverlappedItemCount
+	void IncrementOverlappedItemCount(int8 Amount);
 
 private:
 	/* Camera boom positioning the camera behind the Character */
@@ -153,7 +185,30 @@ private:
 	/* Sets a timer*/
 	FTimerHandle AutoFireTimer;
 
+	/* True if we should trace every frame for Items */
+	bool bShouldTraceForItems;
+
+	/* Number of overlapped Items */
+	int8 OverlappedItemCount;
+
+	/* The Item we hit last frame */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	AItem* TraceHitItemLastFrame;
+
+	/* Currently equipped Weapon */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	AWeapon* EquippedWeapon;
+
+	/* Set this in Blueprints for the default Weapon class */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AWeapon> DefaultWeaponClass;
+
+	/* The item currently hit by our trace in TraceForItems (could be null) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	AItem* TraceHitItem;
+
 public:
 	// Getters for private variables
 	FORCEINLINE bool GetAiming() const { return bAiming; }
+	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
 };
