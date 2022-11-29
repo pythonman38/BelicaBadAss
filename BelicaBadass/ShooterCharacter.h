@@ -108,6 +108,10 @@ public:
 	// Adds or subtracts to or from OverlappedItemCount
 	void IncrementOverlappedItemCount(int8 Amount);
 
+	FVector GetCameraInterpLocation();
+
+	void GetPickupItem(AItem* Item);
+
 private:
 	/* Camera boom positioning the camera behind the Character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -207,8 +211,17 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	AItem* TraceHitItem;
 
+	/* Distance outward from the camera for the interp destination */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	float CameraInterpDistance;
+
+	/* Distance upward from the camera for the interp destination */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	float CameraInterpElevation;
+
 public:
 	// Getters for private variables
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
