@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AmmoType.h"
 #include "ShooterCharacter.generated.h"
 
 class USpringArmComponent;
@@ -11,6 +12,15 @@ class UCameraComponent;
 class USoundCue;
 class AItem;
 class AWeapon;
+
+UENUM(BlueprintType)
+enum class ECombatState : uint8
+{
+	ECS_Unoccupied UMETA(DisplayName = "Unoccupied"),
+	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
+	ECS_Reloading UMETA(DisplayName = "Reloading"),
+	ECS_MAX UMETA(DisplayName = "DefaultMAX")
+};
 
 UCLASS()
 class BELICABADASS_API AShooterCharacter : public ACharacter
@@ -25,6 +35,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	// Make sure camera isn't zoomed in when game starts
 	void SetDefaultCameraView();
 
 	// Called for forwards and backwards input
@@ -41,6 +52,12 @@ protected:
 
 	// Starts a series of events related to firing the weapon
 	void FireWeapon();
+
+	// Plays the animation for firing the Weapon
+	void PlayGunFireMontage();
+
+	// Starts the line trace to determine direction of particles and impact points
+	void SendBullet();
 
 	// Returns true when the line trace hits an object
 	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
@@ -90,10 +107,38 @@ protected:
 	// Detach Weapon and let it fall to the ground
 	void DropWeapon();
 
+	// Starts the sequence that swaps the Weapon
 	void EquipButtonPressed();
 
 	// Drops EquippedWeapon and equips TraceHitItem
 	void SwapWeapon(AWeapon* WeaponToSwap);
+
+	// Initialize the AmmoMap with Ammo values
+	void InitializeAmmoMap();
+
+	// Check to make sure our Weapon has ammo
+	bool WeaponHasAmmo();
+
+	// Calls ReloadWeapon function
+	void ReloadButtonPressed();
+
+	// Starts a sequence of events that reloads EquippedWeapon
+	void ReloadWeapon();
+
+	// Called from blueprints to reset CombatState to unoccupied
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
+
+	// Returns true if we have Ammo of the correct AmmoType
+	bool CarryingAmmo();
+
+	// Called from Animation Blueprint with GrabClip notifiy
+	UFUNCTION(BlueprintCallable)
+	void GrabClip();
+
+	// Called from Animation Blueprint with ReleaseClip notify
+	UFUNCTION(BlueprintCallable)
+	void ReleaseClip();
 
 public:	
 	// Called every frame
@@ -102,14 +147,17 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// Called from blueprints to move the crosshairs during certain actions
 	UFUNCTION(BlueprintCallable)
 	float GetCrosshairSpreadMultiplier() const;
 
 	// Adds or subtracts to or from OverlappedItemCount
 	void IncrementOverlappedItemCount(int8 Amount);
 
+	// Updates the camera smoothly when zooming and not zooming
 	FVector GetCameraInterpLocation();
 
+	// Determines how pickup Item is handled by the Character
 	void GetPickupItem(AItem* Item);
 
 private:
@@ -218,6 +266,34 @@ private:
 	/* Distance upward from the camera for the interp destination */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
 	float CameraInterpElevation;
+
+	/* Map to keep track of Ammo of the different ammo types  */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	TMap<EAmmoType, int32> AmmoMap;
+
+	/* Starting amount of 9mm Ammo*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Items, meta = (AllowPrivateAccess = "true"))
+	int32 Starting9mmAmmo;
+
+	/* Starting amount of AR Ammo */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Items, meta = (AllowPrivateAccess = "true"))
+	int32 StartingARAmmo;
+
+	/* Combat State, can only fire or reload if Unoccupied*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	ECombatState CombatState;
+
+	/* Montage for reload animation */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ReloadMontage;
+
+	/* Transform of the clip when we first grab it during reloading */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	FTransform ClipTransform;
+
+	/* Scene component to attach to the Character's hand during reloading */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	USceneComponent* HandSceneComponent;
 
 public:
 	// Getters for private variables

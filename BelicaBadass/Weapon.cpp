@@ -5,7 +5,14 @@
 
 AWeapon::AWeapon() :
 	ThrowWeaponTime(.7f),
-	bFalling(false)
+	bFalling(false),
+	Ammo(30),
+	MagazineCapacity(30),
+	WeaponType(EWeaponType::EWT_SubmachineGun),
+	AmmoType(EAmmoType::EAT_9mm),
+	ReloadMontageSection(FName("Reload_SMG")),
+	ClipBoneName(FName("smg_clip")),
+	bMovingClip(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -26,6 +33,12 @@ void AWeapon::KeepWeaponUpright()
 	}
 }
 
+void AWeapon::ReloadAmmo(int32 Amount)
+{
+	checkf(Ammo + Amount <= MagazineCapacity, TEXT("Attempted to reload more than MagazineCapacity"));
+	Ammo += Amount;
+}
+
 void AWeapon::ThrowWeapon()
 {
 	FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
@@ -42,6 +55,11 @@ void AWeapon::ThrowWeapon()
 	// Start the ThrowWeaponTimer
 	bFalling = true;
 	GetWorldTimerManager().SetTimer(ThrowWeaponTimer, this, &AWeapon::StopFalling, ThrowWeaponTime);
+}
+
+void AWeapon::DecrementAmmo()
+{
+	(Ammo - 1 <= 0) ? Ammo = 0 : --Ammo;
 }
 
 void AWeapon::StopFalling()
