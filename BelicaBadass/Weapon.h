@@ -37,6 +37,8 @@ public:
 	// The amount to load in the clip depending on how much Ammo it already has
 	void ReloadAmmo(int32 Amount);
 
+	bool ClipIsFull();
+
 protected:
 	// Called when Weapon
 	void StopFalling();

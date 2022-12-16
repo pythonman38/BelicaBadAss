@@ -140,6 +140,17 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void ReleaseClip();
 
+	// Called when LeftShift button is pressed during gameplay
+	void CrouchButtonPressed();
+
+	virtual void Jump() override;
+
+	// Interps capsule half height when moving between crouching and standing
+	void InterpCapsuleHalfHeight(float DeltaTime);
+
+	void TakeAim();
+	void StopAiming();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -205,6 +216,7 @@ private:
 	float CameraDefaultFOV;
 
 	/* Camera field of view value when the Character IS aiming */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	float CameraZoomedFOV;
 
 	/* Camera field of view value while interpolating */
@@ -295,9 +307,45 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	USceneComponent* HandSceneComponent;
 
+	/* True when Character is crouching */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crouching, meta = (AllowPrivateAccess = "true"))
+	bool bCrouching;
+
+	/* Regular movement speed */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float BaseMovementSpeed;
+
+	/* Crouch movement speed*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float CrouchMovementSpeed;
+
+	/* Current half height of the capsule */
+	float CurrentCapsuleHalfHeight;
+
+	/* Half height of the capsule when not crouching */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float StandingCapsuleHalfHeight;
+
+	/* Half height of the capsule when crouching */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float CrouchingCapsuleHalfHeight;
+
+	/* Ground friction while not crouching */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float BaseGroundFriction;
+
+	/* Ground friction while crouching*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float CrouchingGroundFriction;
+
+	/* True when the player is holding the right mouse button */
+	bool bAimingButtonPressed;
+
 public:
 	// Getters for private variables
 	FORCEINLINE bool GetAiming() const { return bAiming; }
+	FORCEINLINE bool GetCrouching() const { return bCrouching; }
+	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };

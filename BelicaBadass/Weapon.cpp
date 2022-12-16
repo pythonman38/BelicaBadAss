@@ -39,6 +39,11 @@ void AWeapon::ReloadAmmo(int32 Amount)
 	Ammo += Amount;
 }
 
+bool AWeapon::ClipIsFull()
+{
+	return Ammo >= MagazineCapacity;
+}
+
 void AWeapon::ThrowWeapon()
 {
 	FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
