@@ -12,6 +12,7 @@ class UCameraComponent;
 class USoundCue;
 class AItem;
 class AWeapon;
+class AAmmo;
 
 UENUM(BlueprintType)
 enum class ECombatState : uint8
@@ -20,6 +21,20 @@ enum class ECombatState : uint8
 	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
 	ECS_Reloading UMETA(DisplayName = "Reloading"),
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
+USTRUCT(BlueprintType)
+struct FInterpLocation
+{
+	GENERATED_BODY()
+
+	/* Scene components to use for its location for interping */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USceneComponent* SceneComponent;
+
+	/* Number of items interpolating to the scene component location  */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 ItemCount;
 };
 
 UCLASS()
@@ -151,6 +166,14 @@ protected:
 	void TakeAim();
 	void StopAiming();
 
+	void PickupAmmo(AAmmo* Ammo);
+
+	void InitializeInterpLocations();
+
+	void ResetPickupSoundTimer();
+
+	void ResetEquipSoundTimer();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -165,11 +188,19 @@ public:
 	// Adds or subtracts to or from OverlappedItemCount
 	void IncrementOverlappedItemCount(int8 Amount);
 
-	// Updates the camera smoothly when zooming and not zooming
-	FVector GetCameraInterpLocation();
-
 	// Determines how pickup Item is handled by the Character
 	void GetPickupItem(AItem* Item);
+
+	FInterpLocation GetInterpLocation(int32 Index);
+
+	// Returns the index in InterpLocations array with the lowest ItemCount
+	int32 GetInterpLocationIndex();
+
+	void IncrementInterpLocItemCount(int32 Index, int32 Amount);
+
+	void StartPickupSoundTimer();
+
+	void StartEquipSoundTimer();
 
 private:
 	/* Camera boom positioning the camera behind the Character */
@@ -341,10 +372,55 @@ private:
 	/* True when the player is holding the right mouse button */
 	bool bAimingButtonPressed;
 
+	/* Used for placement of Weapon interpolation */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Ammo, meta = (AllowPrivateAccess = "true"))
+	USceneComponent* WeaponInterpComp;
+
+	/* Used for placement of Ammo interpolation */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Ammo, meta = (AllowPrivateAccess = "true"))
+	USceneComponent* InterpComp1;
+
+	/* Used for placement of Ammo interpolation */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Ammo, meta = (AllowPrivateAccess = "true"))
+	USceneComponent* InterpComp2;
+
+	/* Used for placement of Ammo interpolation */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Ammo, meta = (AllowPrivateAccess = "true"))
+	USceneComponent* InterpComp3;
+
+	/* Used for placement of Ammo interpolation */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Ammo, meta = (AllowPrivateAccess = "true"))
+	USceneComponent* InterpComp4;
+
+	/* Used for placement of Ammo interpolation */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Ammo, meta = (AllowPrivateAccess = "true"))
+	USceneComponent* InterpComp5;
+
+	/* Used for placement of Ammo interpolation */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Ammo, meta = (AllowPrivateAccess = "true"))
+	USceneComponent* InterpComp6;
+
+	/* Array of interp location structs */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Ammo, meta = (AllowPrivateAccess = "true"))
+	TArray<FInterpLocation> InterpLocations;
+
+	FTimerHandle PickupSoundTimer, EquipSoundTimer;
+	bool bShouldPlayPickupSound, bShouldPlayEquipSound;
+
+	/* Time to wait before we can play another Pickup sound */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Item, meta = (AllowPrivateAccess = "true"))
+	float PickupSoundResetTime;
+
+	/* Time to wait before we can play another Equip sound*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Item, meta = (AllowPrivateAccess = "true"))
+	float EquipSoundResetTime;
+
 public:
 	// Getters for private variables
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE bool GetCrouching() const { return bCrouching; }
+	FORCEINLINE bool GetShouldPlayEquipSound() const { return bShouldPlayEquipSound; }
+	FORCEINLINE bool GetShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
