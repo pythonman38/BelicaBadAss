@@ -20,6 +20,7 @@ enum class ECombatState : uint8
 	ECS_Unoccupied UMETA(DisplayName = "Unoccupied"),
 	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
 	ECS_Reloading UMETA(DisplayName = "Reloading"),
+	ECS_Equipping UMETA(DisplayName = "Equipping"),
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
@@ -36,6 +37,9 @@ struct FInterpLocation
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 ItemCount;
 };
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentSlotIndex, int32, NewSlotIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHighlightIconDelegate, int32, SlotIndex, bool, bStartAnimation);
 
 UCLASS()
 class BELICABADASS_API AShooterCharacter : public ACharacter
@@ -117,7 +121,7 @@ protected:
 	AWeapon* SpawnDefaultWeapon();
 
 	// Takes a Weapon and attaches it to the mesh
-	void EquipWeapon(AWeapon* WeaponToEquip);
+	void EquipWeapon(AWeapon* WeaponToEquip, bool bSwapping = false);
 
 	// Detach Weapon and let it fall to the ground
 	void DropWeapon();
@@ -174,6 +178,22 @@ protected:
 
 	void ResetEquipSoundTimer();
 
+	// Allows the Character to select Weapons in Inventory
+	void FKeyPressed();
+	void OneKeyPressed();
+	void TwoKeyPressed();
+	void ThreeKeyPressed();
+	void FourKeyPressed();
+	void FiveKeyPressed();
+
+	void ExchangeInventoryItems(int32 CurrentItemIndex, int32 NewItemIndex);
+
+	void SwitchIndexItems(int32 Index);
+
+	int32 GetEmptyInventorySlot();
+
+	void HighlightInventorySlot();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -201,6 +221,11 @@ public:
 	void StartPickupSoundTimer();
 
 	void StartEquipSoundTimer();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishEquipping();
+
+	void UnHighlightInventorySlot();
 
 private:
 	/* Camera boom positioning the camera behind the Character */
@@ -414,6 +439,28 @@ private:
 	/* Time to wait before we can play another Equip sound*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Item, meta = (AllowPrivateAccess = "true"))
 	float EquipSoundResetTime;
+
+	/* An array of Items for our Inventory */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	TArray<AItem*> Inventory;
+
+	const int32 INVENTORY_CAPACITY{ 6 };
+
+	/* Delegate for sending slot informaiton to Inventory Bar when equipping */
+	UPROPERTY(BlueprintAssignable, Category = Delegates, meta = (AllowPrivateAccess = "true"))
+	FEquipItemDelegate EquipItemDelegate;
+
+	/* Montage used when changing Weapons in Inventory */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* EquipMontage;
+
+	/* Delegate for playing the icon animation above the Weapon slot */
+	UPROPERTY(BlueprintAssignable, Category = Delegates, meta = (AllowPrivateAccess = "true"))
+	FHighlightIconDelegate HighlightIconDelegate;
+
+	/* The index for the currently highlighted slot */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	int32 HighlightedSlot;
 
 public:
 	// Getters for private variables

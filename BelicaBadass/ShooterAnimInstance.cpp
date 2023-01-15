@@ -52,6 +52,9 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		// Is the Character crouching?
 		bCrouching = ShooterCharacter->GetCrouching();
 
+		// Is the Character equipping a different Weapon?
+		bEquipping = ShooterCharacter->GetCombatState() == ECombatState::ECS_Equipping;
+
 		// Calculate movement offset for straffing and backward animations
 		FRotator AimRotation{ ShooterCharacter->GetBaseAimRotation() }, MovementRotation{ UKismetMathLibrary::MakeRotFromX(ShooterCharacter->GetVelocity()) };
 		MovementOffsetYaw = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
@@ -118,17 +121,17 @@ void UShooterAnimInstance::TurnInPlace()
 
 	if (bTurningInPlace)
 	{
-		bReloading ? RecoilWeight = 1.f : RecoilWeight = 0.f;
+		(bReloading || bEquipping) ? RecoilWeight = 1.f : RecoilWeight = 0.f;
 	}
 	else
 	{
 		if (bCrouching)
 		{
-			bReloading ? RecoilWeight = 1.f : RecoilWeight = 0.1f;
+			(bReloading || bEquipping) ? RecoilWeight = 1.f : RecoilWeight = 0.1f;
 		}
 		else
 		{
-			(bAiming || bReloading) ? RecoilWeight = 1.f : RecoilWeight = 0.5f;
+			(bAiming || bReloading || bEquipping) ? RecoilWeight = 1.f : RecoilWeight = 0.5f;
 		}
 	}
 }
