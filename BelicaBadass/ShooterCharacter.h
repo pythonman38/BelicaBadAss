@@ -244,14 +244,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	float BaseLookUpRate;
 
-	/* Randomized sound played when the Fire Weapon button is pressed */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	USoundCue* FireSound;
-
-	/* Flash that spawns at BarrelSocket when Weapon is fired */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	UParticleSystem* MuzzleFlash;
-
 	/* Montage for firing the Weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* HipFireMontage;
@@ -298,9 +290,6 @@ private:
 
 	/* True when the Character is able to fire the weapon */
 	bool bShouldFire;
-
-	/* Rate of automatic gun fire */
-	float AutomaticFireRate;
 
 	/* Sets a timer*/
 	FTimerHandle AutoFireTimer;
@@ -464,6 +453,7 @@ private:
 
 public:
 	// Getters for private variables
+	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE bool GetCrouching() const { return bCrouching; }
 	FORCEINLINE bool GetShouldPlayEquipSound() const { return bShouldPlayEquipSound; }

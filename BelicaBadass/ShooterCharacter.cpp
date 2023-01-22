@@ -38,7 +38,6 @@ AShooterCharacter::AShooterCharacter() :
 	ShootTimeDuration(0.05f),
 	bFiringBullet(false),
 	// Automatic gun fire variables
-	AutomaticFireRate(0.1f),
 	bShouldFire(true),
 	bFireButtonPressed(false),
 	// Item trace variables
@@ -174,9 +173,10 @@ void AShooterCharacter::FireWeapon()
 {
 	if (EquippedWeapon == nullptr) return;
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
+
 	if (WeaponHasAmmo())
 	{
-		if (FireSound) UGameplayStatics::PlaySound2D(this, FireSound);
+		if (EquippedWeapon->GetFireSound()) UGameplayStatics::PlaySound2D(this, EquippedWeapon->GetFireSound());
 
 		SendBullet();
 
@@ -187,6 +187,8 @@ void AShooterCharacter::FireWeapon()
 		StartFireButtonTimer();
 
 		StartCrosshairBulletFire();
+
+		if (EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Pistol) EquippedWeapon->StartSlideTimer();
 	}
 }
 
@@ -206,7 +208,7 @@ void AShooterCharacter::SendBullet()
 	if (BarrelSocket)
 	{
 		const FTransform SocketTransform{ BarrelSocket->GetSocketTransform(EquippedWeapon->GetItemMesh()) };
-		if (MuzzleFlash) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
+		if (EquippedWeapon->GetMuzzleFlash()) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EquippedWeapon->GetMuzzleFlash(), SocketTransform);
 
 		FVector BeamEnd;
 		bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
@@ -242,7 +244,7 @@ bool AShooterCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, 
 void AShooterCharacter::AimingButtonPressed()
 {
 	bAimingButtonPressed = true;
-	if (CombatState != ECombatState::ECS_Reloading) TakeAim();
+	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping) TakeAim();
 }
 
 void AShooterCharacter::AimingButtonReleased()
@@ -564,6 +566,8 @@ void AShooterCharacter::ExchangeInventoryItems(int32 CurrentItemIndex, int32 New
 {
 	if ((CombatState != ECombatState::ECS_Unoccupied) || (CurrentItemIndex == NewItemIndex) || (NewItemIndex >= Inventory.Num())) return;
 
+	if (bAiming) StopAiming();
+
 	auto OldEquippedWeapon = EquippedWeapon;
 	auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
 	EquipWeapon(NewWeapon);
@@ -677,6 +681,8 @@ void AShooterCharacter::StartEquipSoundTimer()
 void AShooterCharacter::FinishEquipping()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+
+	if (bAimingButtonPressed) TakeAim();
 }
 
 void AShooterCharacter::CameraInterpZoom(float DeltaTime)
@@ -734,18 +740,21 @@ void AShooterCharacter::FireButtonReleased()
 
 void AShooterCharacter::StartFireButtonTimer()
 {
+	if (EquippedWeapon == nullptr) return;
+
 	CombatState = ECombatState::ECS_FireTimerInProgress;
 
-	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AShooterCharacter::AutoFireReset, AutomaticFireRate);	
+	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AShooterCharacter::AutoFireReset, EquippedWeapon->GetAutoFireRate());	
 }
 
 void AShooterCharacter::AutoFireReset()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	if (EquippedWeapon == nullptr) return;
 
 	if (WeaponHasAmmo())
 	{
-		if (bFireButtonPressed) FireWeapon();
+		if (bFireButtonPressed && EquippedWeapon->GetAutomatic()) FireWeapon();
 	}
 	else ReloadWeapon();
 }

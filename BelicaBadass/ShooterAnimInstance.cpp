@@ -5,6 +5,7 @@
 #include "ShooterCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Weapon.h"
 
 UShooterAnimInstance::UShooterAnimInstance() :
 	Speed(0.f),
@@ -54,6 +55,9 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 
 		// Is the Character equipping a different Weapon?
 		bEquipping = ShooterCharacter->GetCombatState() == ECombatState::ECS_Equipping;
+
+		// Determine which Weapon the Character has equipped
+		if (ShooterCharacter->GetEquippedWeapon()) EquippedWeaponType = ShooterCharacter->GetEquippedWeapon()->GetWeaponType();
 
 		// Calculate movement offset for straffing and backward animations
 		FRotator AimRotation{ ShooterCharacter->GetBaseAimRotation() }, MovementRotation{ UKismetMathLibrary::MakeRotFromX(ShooterCharacter->GetVelocity()) };
