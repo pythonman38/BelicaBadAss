@@ -79,7 +79,7 @@ protected:
 	void SendBullet();
 
 	// Returns true when the line trace hits an object
-	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
+	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& OutHitResult);
 
 	// Called when Aiming button is pressed
 	void AimingButtonPressed();
