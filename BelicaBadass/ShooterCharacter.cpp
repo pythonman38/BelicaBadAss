@@ -20,6 +20,8 @@
 #include "BelicaBadass.h"
 #include "BulletHitInterface.h"
 #include "Enemy.h"
+#include "EnemyController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 // Sets default values
 AShooterCharacter::AShooterCharacter() :
@@ -69,7 +71,11 @@ AShooterCharacter::AShooterCharacter() :
 	PickupSoundResetTime(0.2f),
 	EquipSoundResetTime(0.2f),
 	// Icon animation property
-	HighlightedSlot(-1)
+	HighlightedSlot(-1),
+	// Character stats
+	Health(100.f),
+	MaxHealth(100.f),
+	StunChance(0.25f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -110,6 +116,21 @@ AShooterCharacter::AShooterCharacter() :
 
 	WeaponInterpComp = CreateDefaultSubobject<USceneComponent>(TEXT("Weapon Interp Comp"));
 	WeaponInterpComp->SetupAttachment(FollowCamera);
+}
+
+float AShooterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (Health - DamageAmount <= 0.f)
+	{
+		Health = 0.f;
+		Die();
+
+		auto EnemyController = Cast<AEnemyController>(EventInstigator);
+		if (EnemyController) EnemyController->GetBlackboardComponent()->SetValueAsBool(FName(TEXT("IsCharacterDead")), true);
+	}
+	else Health -= DamageAmount;
+
+	return DamageAmount;
 }
 
 // Called when the game starts or when spawned
@@ -273,7 +294,7 @@ bool AShooterCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, 
 void AShooterCharacter::AimingButtonPressed()
 {
 	bAimingButtonPressed = true;
-	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping) TakeAim();
+	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && CombatState != ECombatState::ECS_Stunned) TakeAim();
 }
 
 void AShooterCharacter::AimingButtonReleased()
@@ -444,6 +465,8 @@ void AShooterCharacter::ReloadWeapon()
 
 void AShooterCharacter::FinishReloading()
 {
+	if (CombatState == ECombatState::ECS_Stunned) return;
+
 	CombatState = ECombatState::ECS_Unoccupied;
 
 	if (bAimingButtonPressed) TakeAim();
@@ -648,12 +671,42 @@ UPARAM(DisplayName = "Physical Surface") EPhysicalSurface AShooterCharacter::Get
 	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 }
 
+void AShooterCharacter::EndStun()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+
+	if (bAimingButtonPressed) TakeAim();
+}
+
+void AShooterCharacter::Die()
+{
+	auto AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DeathMontage) AnimInstance->Montage_Play(DeathMontage);
+}
+
+void AShooterCharacter::FinishDeath()
+{
+	GetMesh()->bPauseAnims = true;
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (PC) DisableInput(PC);
+}
+
 
 
 void AShooterCharacter::UnHighlightInventorySlot()
 {
 	HighlightIconDelegate.Broadcast(HighlightedSlot, false);
 	HighlightedSlot = -1;
+}
+
+void AShooterCharacter::Stun()
+{
+	if (Health <= 0.f) return;
+
+	CombatState = ECombatState::ECS_Stunned;
+
+	auto AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && HitReactMontage) AnimInstance->Montage_Play(HitReactMontage);
 }
 
 void AShooterCharacter::FKeyPressed()
@@ -722,6 +775,8 @@ void AShooterCharacter::StartEquipSoundTimer()
 
 void AShooterCharacter::FinishEquipping()
 {
+	if (CombatState == ECombatState::ECS_Stunned) return;
+
 	CombatState = ECombatState::ECS_Unoccupied;
 
 	if (bAimingButtonPressed) TakeAim();
@@ -791,6 +846,8 @@ void AShooterCharacter::StartFireButtonTimer()
 
 void AShooterCharacter::AutoFireReset()
 {
+	if (CombatState == ECombatState::ECS_Stunned) return;
+
 	CombatState = ECombatState::ECS_Unoccupied;
 	if (EquippedWeapon == nullptr) return;
 

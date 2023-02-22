@@ -9,10 +9,11 @@
 
 class USpringArmComponent;
 class UCameraComponent;
-class USoundCue;
 class AItem;
 class AWeapon;
 class AAmmo;
+class AController;
+class USoundCue;
 
 UENUM(BlueprintType)
 enum class ECombatState : uint8
@@ -21,6 +22,7 @@ enum class ECombatState : uint8
 	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
 	ECS_Reloading UMETA(DisplayName = "Reloading"),
 	ECS_Equipping UMETA(DisplayName = "Equipping"),
+	ECS_Stunned UMETA(DisplayName = "Stunned"),
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
@@ -49,6 +51,9 @@ class BELICABADASS_API AShooterCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AShooterCharacter();
+
+	// Take combat damage
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -198,6 +203,14 @@ protected:
 	UPARAM(DisplayName = "Physical Surface") 
 	EPhysicalSurface GetSurfaceType();
 
+	UFUNCTION(BlueprintCallable)
+	void EndStun();
+
+	void Die();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishDeath();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -230,6 +243,8 @@ public:
 	void FinishEquipping();
 
 	void UnHighlightInventorySlot();
+
+	void Stun();
 
 private:
 	/* Camera boom positioning the camera behind the Character */
@@ -455,6 +470,34 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 	int32 HighlightedSlot;
 
+	/* Health of the Character */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float Health;
+
+	/* Maximum health of the Character */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float MaxHealth;
+
+	/* Sound played when Character gets hit by the Enemy */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	USoundCue* MeleeImpactSound;
+
+	/* Blood splatter particles for melee hit */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UParticleSystem* BloodParticles;
+
+	/* Hit react animation montage for when the Character gets stunned */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* HitReactMontage;
+
+	/* Chance of being stunned when hit by an Enemy */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float StunChance;
+
+	/* Montage for Character death */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* DeathMontage;
+
 public:
 	// Getters for private variables
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
@@ -463,6 +506,9 @@ public:
 	FORCEINLINE bool GetShouldPlayEquipSound() const { return bShouldPlayEquipSound; }
 	FORCEINLINE bool GetShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
+	FORCEINLINE float GetStunChance() const { return StunChance; }
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE UParticleSystem* GetBloodParticles() const { return BloodParticles; }
+	FORCEINLINE USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
 };
