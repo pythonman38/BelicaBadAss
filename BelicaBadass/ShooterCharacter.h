@@ -506,9 +506,14 @@ public:
 	FORCEINLINE bool GetShouldPlayEquipSound() const { return bShouldPlayEquipSound; }
 	FORCEINLINE bool GetShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	FORCEINLINE float GetStunChance() const { return StunChance; }
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE UParticleSystem* GetBloodParticles() const { return BloodParticles; }
 	FORCEINLINE USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
+
+	// Setters for private variables
+	FORCEINLINE void SetHealth(float NewHealth) { Health = NewHealth; }
 };

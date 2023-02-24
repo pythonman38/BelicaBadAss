@@ -9,6 +9,8 @@
 
 class UParticleSystem;
 class USoundCue;
+class USphereComponent;
+class UStaticMeshComponent;
 
 UCLASS()
 class BELICABADASS_API AExplosive : public AActor, public IBulletHitInterface
@@ -22,7 +24,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void BulletHit_Implementation(FHitResult HitResult) override;
+	virtual void BulletHit_Implementation(FHitResult HitResult, AActor* Shooter, AController* ShooterController) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -36,6 +38,18 @@ private:
 	/* Sound to play when hit by bullets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	USoundCue* ImpactSound;
+
+	/* Used to determine what Actors overlap during explosion */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	USphereComponent* OverlapSphere;
+
+	/* Mesh for the explosive */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* ExplosiveMesh;
+
+	/* Damage amount for explosive */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float Damage;
 
 public:	
 	// Getters for private variables

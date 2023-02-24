@@ -243,7 +243,7 @@ void AShooterCharacter::SendBullet()
 			{
 				// Does hit Actor implement BulletHitInterface?
 				IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.GetActor());
-				if (BulletHitInterface) BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+				if (BulletHitInterface) BulletHitInterface->BulletHit_Implementation(BeamHitResult, this, GetController());
 				else if (ImpactParticles) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
 
 				// Is the hit Actor an Enemy?
